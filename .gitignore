@@ -18,7 +18,6 @@ build/
 .env
 
 # Model files (if too large)
-*.onnx
 *.pt
 *.pth
 
