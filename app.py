@@ -49,12 +49,9 @@ def detect_items():
         }), 500
 
 if __name__ == '__main__':
-    # For Render deployment - get port from environment variable
-    port = int(os.environ.get('PORT', 5000))
+    # Get port from environment variable - this is critical for Render
+    port = int(os.environ.get('PORT', 10000))
     print(f"Starting Verch Scan API server on port {port}")
     print("Press Ctrl+C to stop the server")
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=False
-    )
+    # Make sure to bind to 0.0.0.0 to listen on all interfaces
+    app.run(host='0.0.0.0', port=port)
