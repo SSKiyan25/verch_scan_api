@@ -49,10 +49,12 @@ def detect_items():
         }), 500
 
 if __name__ == '__main__':
-    print("Starting Verch Scan API server on http://localhost:5000")
+    # For Render deployment - get port from environment variable
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting Verch Scan API server on port {port}")
     print("Press Ctrl+C to stop the server")
     app.run(
-        host=os.getenv('HOST', '0.0.0.0'),
-        port=int(os.getenv('PORT', 5000)),
-        debug=os.getenv('DEBUG', 'False') == 'True'
+        host='0.0.0.0',
+        port=port,
+        debug=False
     )
