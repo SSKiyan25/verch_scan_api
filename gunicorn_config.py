@@ -1,14 +1,9 @@
 import os
 
-# Bind to the port provided by Render
-port = int(os.environ.get('PORT', 10000))
-bind = f"0.0.0.0:{port}"
+# Render provides PORT through environment variable
+bind = "0.0.0.0:{}".format(os.environ.get("PORT", "10000"))
 
-# Number of worker processes
+# Keep other settings
 workers = 1
-
-# Timeout seconds
 timeout = 120
-
-# Log level
 loglevel = 'info'

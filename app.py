@@ -49,9 +49,5 @@ def detect_items():
         }), 500
 
 if __name__ == '__main__':
-    # Get port from environment variable - this is critical for Render
-    port = int(os.environ.get('PORT', 10000))
-    print(f"Starting Verch Scan API server on port {port}")
-    print("Press Ctrl+C to stop the server")
-    # Make sure to bind to 0.0.0.0 to listen on all interfaces
-    app.run(host='0.0.0.0', port=port)
+    # Let Gunicorn handle the port binding
+    app.run()
