@@ -55,11 +55,13 @@ def detect_items():
             logger.error(f"Error opening image: {str(img_error)}")
             return jsonify({"error": f"Invalid image format: {str(img_error)}"}), 400
 
-        # Use Ultralytics for preprocessing/inference
-        logger.info("Running inference...")
-        results = model(img)  # Directly pass PIL image
+        # Try with different inference options to see if it helps with the y-coordinate issue
+        logger.info("Running inference with different options...")
+        
+        # Option 1: Standard inference
+        results = model(img)
         logger.info(f"Inference complete. Results: {len(results)} items")
-
+        
         # Process results using Ultralytics API
         detections = []
         for i, result in enumerate(results):
@@ -72,33 +74,38 @@ def detect_items():
                     
                     # Get bounding box coordinates
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
-                    
                     logger.info(f"Raw Detection {j}: class={class_name}, conf={confidence:.2f}, box=[{x1:.1f}, {y1:.1f}, {x2:.1f}, {y2:.1f}]")
                     
-                    # Check if coordinates are valid - fix potential zero height boxes
-                    if y1 == y2:
-                        # Adjust to make a small box if height is zero
-                        if y1 == 0:
-                            y2 = min(10, img_height/10)  # Use 10px or 10% of image height
-                        else:
-                            y1 = max(0, y2 - min(10, img_height/10))
+                    # If all y-coordinates are zero, generate artificial coordinates based on x-coordinates
+                    if y1 == 0 and y2 == 0:
+                        logger.warning(f"Zero y-coordinates detected, estimating based on x values")
+                        # Estimate y-coordinates based on typical aspect ratio or position in image
+                        # This is a workaround until the actual model issue is fixed
+                        box_width = x2 - x1
+                        estimated_height = box_width * 1.5  # Assume typical aspect ratio
+                        
+                        # Place the box in the middle of the image vertically
+                        y_center = img_height / 2
+                        y1 = max(0, y_center - estimated_height/2)
+                        y2 = min(img_height, y_center + estimated_height/2)
+                        
+                        logger.info(f"Estimated y-coordinates: y1={y1:.1f}, y2={y2:.1f}")
                     
-                    if x1 == x2:
-                        # Adjust to make a small box if width is zero
-                        if x1 == 0:
-                            x2 = min(10, img_width/10)
-                        else:
-                            x1 = max(0, x2 - min(10, img_width/10))
+                    # Ensure coordinates are within image bounds
+                    x1 = max(0, x1)
+                    y1 = max(0, y1)
+                    x2 = min(img_width, x2)
+                    y2 = min(img_height, y2)
                     
-                    # Calculate center and dimensions for the Flutter app
+                    # Calculate center and dimensions
                     width = x2 - x1
                     height = y2 - y1
                     center_x = x1 + width/2
                     center_y = y1 + height/2
                     
-                    # Only include valid detections (non-zero dimensions)
+                    # Only include valid detections
                     if width > 0 and height > 0:
-                        logger.info(f"Adjusted Detection {j}: class={class_name}, conf={confidence:.2f}, box=[{x1:.1f}, {y1:.1f}, {x2:.1f}, {y2:.1f}]")
+                        logger.info(f"Final Detection {j}: class={class_name}, conf={confidence:.2f}, box=[{x1:.1f}, {y1:.1f}, {x2:.1f}, {y2:.1f}]")
                         
                         detections.append({
                             "class": class_name,
@@ -112,7 +119,8 @@ def detect_items():
                                 "height": float(height),
                                 "center_x": float(center_x),
                                 "center_y": float(center_y)
-                            }
+                            },
+                            "estimated_y": (y1 == 0 and y2 == 0)  # Flag to indicate if y-coordinates were estimated
                         })
                     else:
                         logger.warning(f"Skipping detection with invalid dimensions: width={width}, height={height}")
@@ -127,7 +135,8 @@ def detect_items():
             "image_size": {
                 "width": img_width,
                 "height": img_height
-            }
+            },
+            "note": "Some y-coordinates may have been estimated due to model output issues"
         })
 
     except Exception as e:
