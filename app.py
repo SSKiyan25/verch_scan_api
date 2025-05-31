@@ -20,7 +20,7 @@ CORS(app)
 # Load your custom ONNX model with Ultralytics
 try:
     logger.info("Loading model from path: best.onnx")
-    model = YOLO("best.onnx", task="detect")  # Explicitly set task to detect
+    model = YOLO("bestv2.onnx", task="detect")  # Explicitly set task to detect
     logger.info(f"Model loaded successfully. Model type: {type(model)}")
 except Exception as e:
     logger.error(f"Error loading model: {str(e)}")
